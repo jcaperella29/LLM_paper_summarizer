@@ -1,103 +1,50 @@
 import fitz  # PyMuPDF for PDF processing
-
-from flask import Flask, request, render_template, jsonify, send_file
 import os
+import zipfile
+import requests
+from flask import Flask, request, render_template, jsonify, send_file, send_from_directory
 from fpdf import FPDF
 
-import requests
-import io
-from PIL import Image
-import fitz  # PyMuPDF
-import io
-from PIL import Image
-import os
+app = Flask(__name__, static_folder="static")
 
-def extract_figures_from_pdf(pdf_path):
+UPLOAD_FOLDER = "uploads"
+SUMMARY_FOLDER = "summaries"
+FIGURE_FOLDER = "static/figures"
+
+# Ensure directories exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(SUMMARY_FOLDER, exist_ok=True)
+os.makedirs(FIGURE_FOLDER, exist_ok=True)
+
+### 📌 Function to Summarize Text with Chunk Processing ###
+def summarize_text(text, chunk_size=3000):
     """
-    Extracts both raster images and vector figures from a PDF.
-    Saves them as separate images in /static/figures.
+    Sends extracted text to Ollama for summarization.
+    Processes text in **chunks** to avoid timeouts.
     """
-    output_folder = "static/figures"
-    os.makedirs(output_folder, exist_ok=True)
+    text_chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+    summaries = []
 
-    doc = fitz.open(pdf_path)
-    figure_paths = []
-    img_count = 0
-
-    for page_num in range(len(doc)):
-        page = doc[page_num]
-        images = page.get_images(full=True)
-
-        # Extract raster images (PNG, JPEG)
-        for img_index, img in enumerate(images):
-            xref = img[0]
-            base_image = doc.extract_image(xref)
-            image_bytes = base_image["image"]
-            img_ext = base_image["ext"]
-
-            # Save the extracted image
-            img_filename = f"figure_{page_num+1}_{img_index+1}.{img_ext}"
-            img_path = os.path.join(output_folder, img_filename)
-
-            with open(img_path, "wb") as f:
-                f.write(image_bytes)
-
-            figure_paths.append(f"/static/figures/{img_filename}")
-            img_count += 1
-
-        # Extract vector figures (Cropping detected bounding boxes)
-        for rect in page.get_drawings():
-            x0, y0, x1, y1 = rect["rect"]  # Bounding box
-            width = x1 - x0
-            height = y1 - y0
-
-            # Ignore small lines and elements
-            if width > 100 and height > 100:
-                pix = page.get_pixmap(clip=(x0, y0, x1, y1), matrix=fitz.Matrix(2, 2))
-                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-
-                img_filename = f"vector_figure_{page_num+1}_{img_count+1}.png"
-                img_path = os.path.join(output_folder, img_filename)
-                img.save(img_path, "PNG")
-
-                figure_paths.append(f"/static/figures/{img_filename}")
-                img_count += 1
-
-    print(f"📌 Extracted {img_count} figures.")
-    return figure_paths
-
-def summarize_text(text, chunk_size=1000):
-    """
-    Summarizes large text in smaller chunks to prevent Ollama timeouts.
-    Ensures that the function still returns a valid summary even if some chunks fail.
-    """
-    prompt_template = "Summarize this scientific paper:\n\n"
-    text_chunks = [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
-    
-    full_summary = ""
     for idx, chunk in enumerate(text_chunks):
-        print(f"Processing chunk {idx + 1}/{len(text_chunks)}")  # Debug log
-        
-        prompt = prompt_template + chunk
+        print(f"📌 Processing chunk {idx + 1}/{len(text_chunks)}")  # Debugging log
         try:
             response = requests.post(
                 "http://localhost:11434/api/generate",
-                json={"model": "mistral", "prompt": prompt, "stream": False},
-                timeout=180  # Increased timeout for reliability
+                json={"model": "mistral", "prompt": f"Summarize this:\n{chunk}", "stream": False},
+                timeout=120
             )
-            print(f"Ollama response received for chunk {idx + 1}")  # Debugging log
-            full_summary += response.json().get("response", "") + "\n"
-
+            summary = response.json().get("response", "Error: No response from Ollama.")
+            summaries.append(summary)
         except requests.exceptions.Timeout:
-            print(f"Error: Ollama request timed out on chunk {idx + 1}")
-            full_summary += f"\n[Error: Ollama timed out on chunk {idx + 1}]\n"
+            print(f"❌ Error: Ollama request timed out on chunk {idx + 1}")
+            summaries.append("Error: Timeout on this chunk.")
 
-    return full_summary.strip() if full_summary.strip() else "Error: No summary generated."
+    return "\n\n".join(summaries)  # Combine summaries
 
-
+### 📌 Function to Extract Text from PDF (Supports Chunking) ###
 def extract_text_from_pdf(pdf_path, chunk_size=3000):
     """
-    Extracts text from a PDF and chunks it for easier processing.
+    Extracts text from a PDF and returns it in **manageable chunks**.
     """
     doc = fitz.open(pdf_path)
     text_chunks = []
@@ -106,58 +53,56 @@ def extract_text_from_pdf(pdf_path, chunk_size=3000):
     for page in doc:
         current_text += page.get_text("text") + "\n"
         if len(current_text) >= chunk_size:
-            text_chunks.append(current_text.strip())
+            text_chunks.append(current_text)
             current_text = ""
 
     if current_text:
-        text_chunks.append(current_text.strip())
+        text_chunks.append(current_text)
 
-    return " ".join(text_chunks)
+    return " ".join(text_chunks)  # Return full extracted text
 
+### 📌 Function to Extract Figures (Images) from a PDF ###
+def extract_figures_from_pdf(pdf_path, output_folder):
+    """
+    Extracts images from a PDF file and saves them in a specified folder.
+    """
+    doc = fitz.open(pdf_path)
+    extracted_images = []
+    pdf_filename = os.path.basename(pdf_path).replace(".pdf", "")
 
-app = Flask(__name__)
-UPLOAD_FOLDER = "uploads"
-SUMMARY_FOLDER = "summaries"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(SUMMARY_FOLDER, exist_ok=True)
+    for i, page in enumerate(doc):
+        for img_index, img in enumerate(page.get_images(full=True)):
+            xref = img[0]
+            img_data = doc.extract_image(xref)
+            img_bytes = img_data["image"]
+            img_ext = img_data["ext"]
 
-@app.route("/")
-def index():
-    return render_template("index.html")
-@app.route("/upload", methods=["POST"])
-def upload_file():
-    if "file" not in request.files:
-        return "No file uploaded", 400
+            img_filename = f"{pdf_filename}_page{i+1}_img{img_index+1}.{img_ext}"
+            img_path = os.path.join(output_folder, img_filename)
 
-    file = request.files["file"]
-    if file.filename == "":
-        return "No selected file", 400
+            with open(img_path, "wb") as f:
+                f.write(img_bytes)
 
-    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(filepath)
-    print(f"File saved at {filepath}")
+            extracted_images.append(img_filename)
 
-    # Extract text and figures
-    extracted_text = extract_text_from_pdf(filepath)
-    figures = extract_figures_from_pdf(filepath)  # NEW - Proper figure extraction
-    summary_text = summarize_text(extracted_text)
+    return extracted_images  # List of extracted image filenames
 
-    # Save summary as PDF
-    pdf_filename = os.path.join(SUMMARY_FOLDER, "summary.pdf")
-    create_summary_pdf(summary_text, pdf_filename)
+### 📌 Function to Process ZIP Files (Extract PDFs) ###
+def process_zip(zip_path):
+    """
+    Extracts PDFs from a ZIP file and processes them.
+    """
+    extracted_files = []
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(UPLOAD_FOLDER)
+        extracted_files = [os.path.join(UPLOAD_FOLDER, f) for f in zip_ref.namelist() if f.endswith(".pdf")]
+    return extracted_files
 
-    return jsonify({
-        "summary": summary_text,
-        "pdf_url": "/download_summary",
-        "figures": figures  # Send figure paths
-    })
-
-@app.route("/download_summary")
-def download_summary():
-    pdf_path = os.path.join(SUMMARY_FOLDER, "summary.pdf")
-    return send_file(pdf_path, as_attachment=True)
-
+### 📌 Function to Generate Summary PDF ###
 def create_summary_pdf(summary_text, pdf_filename):
+    """
+    Saves a given summary text into a **downloadable** PDF file.
+    """
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
@@ -167,6 +112,82 @@ def create_summary_pdf(summary_text, pdf_filename):
     pdf.set_font("Arial", size=12)
     pdf.multi_cell(0, 10, summary_text)
     pdf.output(pdf_filename)
+
+### 📌 Flask Routes ###
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+# Serve static files (CSS, JS)
+@app.route("/static/<path:filename>")
+def static_files(filename):
+    return send_from_directory("static", filename)
+@app.route("/upload", methods=["POST"])
+def upload_file():
+    """
+    Handles uploaded ZIP or PDF files, extracts data, summarizes text, and extracts figures.
+    """
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+
+    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(filepath)
+    print(f"✅ File saved at {filepath}")
+
+    pdf_files = []
+
+    # Handle ZIP Files
+    if file.filename.endswith(".zip"):
+        pdf_files = process_zip(filepath)
+        print(f"📌 Extracted {len(pdf_files)} PDFs from ZIP.")
+    else:
+        pdf_files.append(filepath)  # Single PDF case
+
+    if not pdf_files:
+        return jsonify({"error": "No PDFs found."}), 400
+
+    response_data = {"summaries": {}, "figures": {}, "download_links": {}}
+
+    for pdf in pdf_files:
+        pdf_name = os.path.basename(pdf).replace(".pdf", "")
+        extracted_text = extract_text_from_pdf(pdf)
+        summary_text = summarize_text(extracted_text) if extracted_text else "Error: No summary generated."
+        response_data["summaries"][pdf_name] = summary_text
+
+        figures = extract_figures_from_pdf(pdf, FIGURE_FOLDER)
+        response_data["figures"][pdf_name] = figures
+
+        # Save summary PDF
+        pdf_summary_path = os.path.join(SUMMARY_FOLDER, f"{pdf_name}_summary.pdf")
+        create_summary_pdf(summary_text, pdf_summary_path)
+
+        # ✅ Only add a single correct download link (Fixes extra button issue)
+        response_data["download_links"][pdf_name] = f"/download_summary/{pdf_name}"
+
+    print(f"📌 Sending response: {response_data}")
+    return jsonify(response_data)
+
+# API Endpoint: Download Summaries
+@app.route("/download_summary/<pdf_name>")
+def download_summary(pdf_name):
+    """
+    Allows users to download **individual** summary PDFs.
+    """
+    pdf_path = os.path.join(SUMMARY_FOLDER, f"{pdf_name}_summary.pdf")
+    return send_file(pdf_path, as_attachment=True)
+
+# API Endpoint: Serve Extracted Figures
+@app.route("/static/figures/<filename>")
+def serve_figure(filename):
+    """
+    Allows users to view/download extracted figures.
+    """
+    return send_from_directory(FIGURE_FOLDER, filename)
 
 if __name__ == "__main__":
     app.run(debug=True)
