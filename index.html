@@ -5,43 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JCAP_AI_PAPER_SUMMARIZER</title>
     <link rel="stylesheet" href="/static/style.css">
-    <script src="/static/script.js"></script>
+    <script defer src="/static/script.js"></script>
 </head>
 <body>
     <header>
         <h1>JCAP AI Paper Summarizer</h1>
     </header>
 
-    <div class="container">
-        <nav>
-            <button onclick="showTab('upload-tab')">Upload</button>
-            <button onclick="showTab('summary-tab')">Summary</button>
-            <button id="figures-tab-btn" onclick="showTab('figures-tab')" style="display: none;">Figures</button>
-        </nav>
+    <nav>
+        <button onclick="showTab('upload-tab')">Upload</button>
+        <button onclick="showTab('summary-tab')">Summaries</button>
+        <button onclick="showTab('figures-tab')">Figures</button>
+    </nav>
 
-        <div id="upload-tab" class="tab active">
-            <h2>Upload a PDF</h2>
-            <form id="upload-form" enctype="multipart/form-data" onsubmit="event.preventDefault(); uploadFile();">
-                <input type="file" name="file" required>
-                <button type="button" onclick="uploadFile();">Upload</button>
-            </form>
-            <div id="progress-container">
-                <div id="progress-bar"></div>
-            </div>
-        </div>
-
-        <div id="summary-tab" class="tab">
-            <h2>Summary</h2>
-            <p id="summary-text">No summary available. Upload a document first.</p>
-            <a id="download-button" href="#" download style="display: none;">
-                <button>Download Summary as PDF</button>
-            </a>
-        </div>
-
-        <div id="figures-tab" class="tab">
-            <h2>Extracted Figures</h2>
-            <div id="figures-container">No figures available.</div>
+    <!-- Upload Tab -->
+    <div id="upload-tab" class="tab active">
+        <h2>Upload a ZIP or PDF File</h2>
+        <form id="upload-form" enctype="multipart/form-data" onsubmit="event.preventDefault(); uploadFile();">
+            <input type="file" name="file" required>
+            <button type="submit">Upload</button>
+        </form>
+        <div id="progress-container">
+            <div id="progress-bar"></div>
         </div>
     </div>
+
+    <!-- Summaries Tab -->
+    <div id="summary-tab" class="tab">
+        <h2>Summaries</h2>
+        <div id="summary-container">
+            <p>No summaries available. Upload a document first.</p>
+        </div>
+    </div>
+
+    <!-- Figures Tab -->
+    <div id="figures-tab" class="tab">
+        <h2>Figures</h2>
+        <div id="figures-container">
+            <p>No figures extracted. Upload a document first.</p>
+        </div>
+    </div>
+
 </body>
 </html>
+
