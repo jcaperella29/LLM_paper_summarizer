@@ -1,60 +1,74 @@
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("✅ JCAP_AI_PAPER_SUMMARIZER loaded successfully!");
+
+    let uploadButton = document.getElementById('upload-button');
+
+    if (uploadButton) {
+        uploadButton.addEventListener("click", uploadFile);
+    } else {
+        console.error("❌ Upload button not found! Check index.html.");
+    }
+});
+
+// Function to handle tab switching
 function showTab(tabId) {
-    console.log("Switching to tab:", tabId);
-
-    document.getElementById('upload-tab').style.display = 'none';
-    document.getElementById('summary-tab').style.display = 'none';
-    document.getElementById('figures-tab').style.display = 'none';
-
+    document.querySelectorAll('.tab').forEach(tab => tab.style.display = 'none');
     document.getElementById(tabId).style.display = 'block';
+    console.log(`🔄 Switching to tab: ${tabId}`);
 }
 
 function uploadFile() {
-    console.log("Upload button clicked");
+    console.log("📌 Upload button clicked");
 
     let formData = new FormData(document.getElementById('upload-form'));
+
     document.getElementById('progress-container').style.display = 'block';
     document.getElementById('progress-bar').style.width = '0%';
-    document.getElementById('summary-text').innerText = '';
-    document.getElementById('figures-container').innerHTML = '';  
 
-    fetch("http://127.0.0.1:5000/upload", {
+    fetch("/upload", {
         method: "POST",
         body: formData
     })
     .then(response => response.json())
     .then(data => {
-        console.log("✅ Response received:", data);
+        console.log("✅ Full response:", data);
 
-        document.getElementById('progress-bar').style.width = '100%';
-        setTimeout(() => showTab('summary-tab'), 500);
+        let summaryTab = document.getElementById("summary-tab");
+        let figuresTab = document.getElementById("figures-tab");
+        summaryTab.innerHTML = "<h2>Summaries</h2>";
+        figuresTab.innerHTML = "<h2>Figures</h2>";
 
-        if (data.summary && data.summary.trim() !== "Error: No summary generated.") {
-            document.getElementById('summary-text').innerText = data.summary;
-        } else {
-            document.getElementById('summary-text').innerText = "❌ Summary not available.";
-        }
+        // Populate summaries
+        Object.keys(data.summaries).forEach(pdfName => {
+            let summaryContent = document.createElement("div");
+            summaryContent.innerHTML = `
+                <h3>${pdfName} Summary</h3>
+                <p>${data.summaries[pdfName]}</p>
+                <a href="${data.download_links[pdfName]}" download>
+                    <button>Download Summary</button>
+                </a>
+            `;
+            summaryTab.appendChild(summaryContent);
+        });
 
-        document.getElementById('download-button').style.display = 'block';
-        document.getElementById('download-button').setAttribute("href", data.pdf_url);
-
-        if (data.figures.length > 0) {
-            console.log("✅ Figures found, updating UI...");
-            document.getElementById("figures-tab-btn").style.display = "inline-block";  
-            document.getElementById("figures-container").innerHTML = "";  
-
-            data.figures.forEach(function(figureUrl) {
-                let imgElement = document.createElement("img");
-                imgElement.src = figureUrl;
-                imgElement.style.maxWidth = "100%";
-                imgElement.alt = "Extracted figure";
-                document.getElementById("figures-container").appendChild(imgElement);
+        // Populate figures
+        Object.keys(data.figures).forEach(pdfName => {
+            let figuresContent = document.createElement("div");
+            figuresContent.innerHTML = `<h3>${pdfName} Figures</h3>`;
+            
+            data.figures[pdfName].forEach(fig => {
+                let img = document.createElement("img");
+                img.src = "/static/figures/" + fig;
+                img.alt = "Extracted Figure";
+                figuresContent.appendChild(img);
             });
 
-            setTimeout(() => showTab('figures-tab'), 1000);
-        } else {
-            console.log("❌ No figures found in response.");
-            document.getElementById("figures-container").innerText = "❌ No figures found.";
-        }
+            figuresTab.appendChild(figuresContent);
+        });
+
+        showTab('summary-tab');
     })
-    .catch(error => console.error('❌ Error:', error));
+    .catch(error => console.error("❌ Fetch error:", error));
 }
