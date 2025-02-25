@@ -1,11 +1,7 @@
 /* General Page Styling */
 body {
-    background: url('/static/image.png') no-repeat center center fixed;
-    background-size: cover;
-    font-family: 'Arial', sans-serif;
+    background: #2d3b5a; /* Dark blue background */
     color: #f8f8f8;
-    margin: 0;
-    padding: 0;
 }
 
 /* Header */
