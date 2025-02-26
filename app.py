@@ -190,5 +190,5 @@ def serve_figure(filename):
     return send_from_directory(FIGURE_FOLDER, filename)
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # Cloud Run expects 8080
-    app.run(host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 8080))  # Fix: Use Cloud Run's port 8080
+    app.run(host="0.0.0.0", port=port)        # Fix: Listen on all interface
