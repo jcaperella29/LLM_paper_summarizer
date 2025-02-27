@@ -1,0 +1,98 @@
+/* General Page Styling */
+body {
+    background: #2d3b5a; /* Dark blue background */
+    color: #f8f8f8;
+}
+
+/* Header */
+header {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    font-size: 24px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Navigation */
+nav {
+    text-align: center;
+    margin: 20px 0;
+}
+
+nav button {
+    background: linear-gradient(90deg, #2d3b5a, #4c6ea5);
+    color: #f8f8f8;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+nav button:hover {
+    background: linear-gradient(90deg, #4c6ea5, #6b8ed6);
+}
+
+/* Tabs */
+.tab {
+    display: none;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    margin: 20px;
+    border-radius: 10px;
+}
+
+.active {
+    display: block;
+}
+
+/* Progress Bar */
+#progress-container {
+    display: none;
+    width: 80%;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 20px auto;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+#progress-bar {
+    width: 0%;
+    height: 20px;
+    background: #4c6ea5;
+}
+
+/* Summary & Figures */
+#summary-text, #figures-container {
+    font-size: 18px;
+    padding: 15px;
+}
+
+#figures-container img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(255, 255, 255, 0.2);
+}
+
+/* Download Button */
+#download-button button {
+    background: #f8b400;
+    color: black;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 20px;
+    transition: 0.3s;
+}
+
+#download-button button:hover {
+    background: #ffd700;
+}
