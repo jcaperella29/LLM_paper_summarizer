@@ -10,9 +10,11 @@ COPY . /app
 # Install required dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port that Flask will run on
+# Install Ollama inside the container
+RUN curl -fsSL https://ollama.ai/install.sh | sh
 
+# Expose the port that Flask will run on
 EXPOSE 8080
 
-# Run the Flask application
-CMD ["python", "app.py"]
+# Start Ollama in the background, then run Flask
+CMD ollama serve & gunicorn -b 0.0.0.0:8080 app:app
