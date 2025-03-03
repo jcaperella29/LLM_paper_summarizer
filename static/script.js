@@ -1,10 +1,4 @@
-
-
-
-let formData = new FormData(document.getElementById('upload-form'));
-         
-          docu
-document.addEventListener("DOMContentLoaded", function () {
+ document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ JCAP_AI_PAPER_SUMMARIZER loaded successfully!");
     console.log("📌 Checking button and input elements...");
     
@@ -19,31 +13,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (uploadButton) {
-        uploadButton.addEventListener("click", uploadFile);
-    } else {
-        console.error("❌ Upload button not found! Check index.html.");
-    }
-});
-
-// Function to check file selection
-function checkFileSelection() {
-    let fileInput = document.getElementById("fileInput");
-
-    if (!fileInput) {
-        console.error("❌ File input not found in DOM!");
-        return;
-    }
-
-    console.log("Selected file:", fileInput.files);
-}
-
-// Call this in the browser console to debug:
-// checkFileSelection();
-
-    let uploadButton = document.getElementById('uploadButton'); // ✅ Fixed ID
-
-    if (uploadButton) {
-        uploadButton.addEventListener("click", uploadFile);
+        uploadButton.addEventListener("click", function(event) {
+            event.preventDefault(); // Prevent default form submission
+            uploadFile();
+        });
     } else {
         console.error("❌ Upload button not found! Check index.html.");
     }
@@ -52,18 +25,32 @@ function checkFileSelection() {
 // Function to handle tab switching
 function showTab(tabId) {
     document.querySelectorAll('.tab').forEach(tab => tab.style.display = 'none');
-    document.getElementById(tabId).style.display = 'block';
-    console.log(`🔄 Switching to tab: ${tabId}`);
+    let selectedTab = document.getElementById(tabId);
+
+    if (selectedTab) {
+        selectedTab.style.display = 'block';
+        console.log(`🔄 Switching to tab: ${tabId}`);
+    } else {
+        console.error(`❌ Tab not found: ${tabId}`);
+    }
 }
 
+// Function to handle file upload
 function uploadFile() {
     console.log("📌 Upload button clicked");
+
     let fileInput = document.getElementById("fileInput");
 
-    let formData = new FormData(document.getElementById('upload-form'));
+    if (!fileInput || fileInput.files.length === 0) {
+        console.error("❌ No file selected!");
+        alert("Please select a file before uploading.");
+        return;
+    }
 
-    document.getElementById('progress-container').style.display = 'block';
-    document.getElementById('progress-bar').style.width = '0%';
+    let formData = new FormData(document.getElementById("upload-form"));
+
+    document.getElementById("progress-container").style.display = "block";
+    document.getElementById("progress-bar").style.width = "0%";
 
     fetch("/upload", {
         method: "POST",
@@ -78,7 +65,6 @@ function uploadFile() {
         summaryTab.innerHTML = "<h2>Summaries</h2>";
         figuresTab.innerHTML = "<h2>Figures</h2>";
 
-        // ✅ Safety check for missing summaries
         if (!data.summaries || typeof data.summaries !== "object") {
             console.error("❌ Error: Summaries are missing in response!");
             return;
@@ -109,7 +95,7 @@ function uploadFile() {
 
             data.figures[pdfName].forEach(fig => {
                 let img = document.createElement("img");
-                img.src = fig.startsWith("http") ? fig : "/static/figures/" + fig; // ✅ Fixed path issue
+                img.src = fig.startsWith("http") ? fig : "/static/figures/" + fig;
                 img.alt = "Extracted Figure";
                 figuresContent.appendChild(img);
             });
@@ -117,9 +103,11 @@ function uploadFile() {
             figuresTab.appendChild(figuresContent);
         });
 
-        showTab('summary-tab');
+        showTab("summary-tab");
     })
     .catch(error => console.error("❌ Fetch error:", error));
 }
 
+// Expose function to global scope
 window.uploadFile = uploadFile;
+
