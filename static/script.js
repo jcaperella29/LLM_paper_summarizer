@@ -24,6 +24,7 @@ function showTab(tabId) {
 
 function uploadFile() {
     console.log("📌 Upload button clicked");
+    let fileInput = document.getElementById("fileInput");
 
     let formData = new FormData(document.getElementById('upload-form'));
 
