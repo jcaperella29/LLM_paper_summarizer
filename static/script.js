@@ -2,6 +2,9 @@
             `;
           document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ JCAP_AI_PAPER_SUMMARIZER loaded successfully!");
+    console.log("📌 Checking button and input elements...");
+   console.log("Upload Button:", document.getElementById('uploadButton'));
+    console.log("File Input:", document.getElementById('fileInput'));
 
     let uploadButton = document.getElementById('uploadButton'); // ✅ Fixed ID
 
