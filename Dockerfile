@@ -1,5 +1,5 @@
-# Use Python base image
-FROM python:3.10
+# Use Python base image (forcing x86_64 if needed)
+FROM --platform=linux/amd64 python:3.10
 
 # Set working directory
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . /app
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Install Ollama
 RUN curl -fsSL https://ollama.ai/install.sh | sh
