@@ -128,49 +128,22 @@ def upload_file():
     """
     Handles uploaded ZIP or PDF files, extracts data, summarizes text, and extracts figures.
     """
+    print("✅ Received upload request")  # Debugging print
+
     if "file" not in request.files:
+        print("❌ Error: No file uploaded")
         return jsonify({"error": "No file uploaded"}), 400
 
     file = request.files["file"]
     if file.filename == "":
+        print("❌ Error: No selected file")
         return jsonify({"error": "No selected file"}), 400
 
     filepath = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(filepath)
     print(f"✅ File saved at {filepath}")
 
-    pdf_files = []
-
-    # Handle ZIP Files
-    if file.filename.endswith(".zip"):
-        pdf_files = process_zip(filepath)
-        print(f"📌 Extracted {len(pdf_files)} PDFs from ZIP.")
-    else:
-        pdf_files.append(filepath)  # Single PDF case
-
-    if not pdf_files:
-        return jsonify({"error": "No PDFs found."}), 400
-
-    response_data = {"summaries": {}, "figures": {}, "download_links": {}}
-
-    for pdf in pdf_files:
-        pdf_name = os.path.basename(pdf).replace(".pdf", "")
-        extracted_text = extract_text_from_pdf(pdf)
-        summary_text = summarize_text(extracted_text) if extracted_text else "Error: No summary generated."
-        response_data["summaries"][pdf_name] = summary_text
-
-        figures = extract_figures_from_pdf(pdf, FIGURE_FOLDER)
-        response_data["figures"][pdf_name] = figures
-
-        # Save summary PDF
-        pdf_summary_path = os.path.join(SUMMARY_FOLDER, f"{pdf_name}_summary.pdf")
-        create_summary_pdf(summary_text, pdf_summary_path)
-
-        # ✅ Only add a single correct download link (Fixes extra button issue)
-        response_data["download_links"][pdf_name] = f"/download_summary/{pdf_name}"
-
-    print(f"📌 Sending response: {response_data}")
-    return jsonify(response_data)
+    return jsonify({"message": "File uploaded successfully", "filename": file.filename})
 
 # API Endpoint: Download Summaries
 @app.route("/download_summary/<pdf_name>")
