@@ -22,16 +22,17 @@
     <div id="upload-tab" class="tab active">
         <h2>Upload a ZIP or PDF File</h2>
         <form id="upload-form" enctype="multipart/form-data" onsubmit="event.preventDefault(); uploadFile();">
-            <input type="file" id="fileInput" name="file" required> <!-- ✅ ADDED id="fileInput" -->
-            <button type="submit" id="uploadButton">Upload</button> <!-- ✅ ADDED id="uploadButton" -->
+            <input type="file" id="fileInput" name="file" required> <!-- ✅ Removed duplicate input -->
+            <button id="uploadButton" type="submit">Upload</button> <!-- ✅ Changed from onclick to type="submit" -->
         </form>
+
         <div id="progress-container">
             <div id="progress-bar"></div>
         </div>
     </div>
 
     <!-- Summaries Tab -->
-    <div id="summary-tab" class="tab" style="display: none;"> <!-- ✅ Hide initially -->
+    <div id="summary-tab" class="tab" style="display: none;">
         <h2>Summaries</h2>
         <div id="summary-container">
             <p>No summaries available. Upload a document first.</p>
@@ -39,7 +40,7 @@
     </div>
 
     <!-- Figures Tab -->
-    <div id="figures-tab" class="tab" style="display: none;"> <!-- ✅ Hide initially -->
+    <div id="figures-tab" class="tab" style="display: none;">
         <h2>Figures</h2>
         <div id="figures-container">
             <p>No figures extracted. Upload a document first.</p>
