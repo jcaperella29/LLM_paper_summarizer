@@ -1,9 +1,9 @@
 
-
-document.addEventListener("DOMContentLoaded", function () {
+            `;
+          document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ JCAP_AI_PAPER_SUMMARIZER loaded successfully!");
 
-    let uploadButton = document.getElementById('upload-button');
+    let uploadButton = document.getElementById('uploadButton'); // ✅ Fixed ID
 
     if (uploadButton) {
         uploadButton.addEventListener("click", uploadFile);
@@ -40,6 +40,17 @@ function uploadFile() {
         summaryTab.innerHTML = "<h2>Summaries</h2>";
         figuresTab.innerHTML = "<h2>Figures</h2>";
 
+        // ✅ Safety check for missing summaries
+        if (!data.summaries || typeof data.summaries !== "object") {
+            console.error("❌ Error: Summaries are missing in response!");
+            return;
+        }
+
+        if (!data.figures || typeof data.figures !== "object") {
+            console.error("❌ Error: Figures are missing in response!");
+            return;
+        }
+
         // Populate summaries
         Object.keys(data.summaries).forEach(pdfName => {
             let summaryContent = document.createElement("div");
@@ -57,10 +68,10 @@ function uploadFile() {
         Object.keys(data.figures).forEach(pdfName => {
             let figuresContent = document.createElement("div");
             figuresContent.innerHTML = `<h3>${pdfName} Figures</h3>`;
-            
+
             data.figures[pdfName].forEach(fig => {
                 let img = document.createElement("img");
-                img.src = "/static/figures/" + fig;
+                img.src = fig.startsWith("http") ? fig : "/static/figures/" + fig; // ✅ Fixed path issue
                 img.alt = "Extracted Figure";
                 figuresContent.appendChild(img);
             });
