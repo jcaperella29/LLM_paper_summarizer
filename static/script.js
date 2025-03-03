@@ -1,5 +1,5 @@
 
-            `;
+         
           document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ JCAP_AI_PAPER_SUMMARIZER loaded successfully!");
     console.log("📌 Checking button and input elements...");
