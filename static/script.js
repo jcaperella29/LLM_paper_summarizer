@@ -1,10 +1,44 @@
+
+
+
 let formData = new FormData(document.getElementById('upload-form'));
          
-          document.addEventListener("DOMContentLoaded", function () {
+          docu
+document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ JCAP_AI_PAPER_SUMMARIZER loaded successfully!");
     console.log("📌 Checking button and input elements...");
-   console.log("Upload Button:", document.getElementById('uploadButton'));
-    console.log("File Input:", document.getElementById('fileInput'));
+    
+    let uploadButton = document.getElementById("uploadButton");
+    let fileInput = document.getElementById("fileInput");
+
+    console.log("Upload Button:", uploadButton);
+    console.log("File Input:", fileInput);
+
+    if (!fileInput) {
+        console.error("❌ Error: File input element not found in DOM!");
+    }
+
+    if (uploadButton) {
+        uploadButton.addEventListener("click", uploadFile);
+    } else {
+        console.error("❌ Upload button not found! Check index.html.");
+    }
+});
+
+// Function to check file selection
+function checkFileSelection() {
+    let fileInput = document.getElementById("fileInput");
+
+    if (!fileInput) {
+        console.error("❌ File input not found in DOM!");
+        return;
+    }
+
+    console.log("Selected file:", fileInput.files);
+}
+
+// Call this in the browser console to debug:
+// checkFileSelection();
 
     let uploadButton = document.getElementById('uploadButton'); // ✅ Fixed ID
 
