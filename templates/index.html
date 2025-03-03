@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JCAP_AI_PAPER_SUMMARIZER</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <script defer src="/static/script.js"></script>
+    <title>JCAP AI Paper Summarizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script defer src="{{ url_for('static', filename='script.js') }}"></script>
 </head>
 <body>
     <header>
@@ -22,8 +22,8 @@
     <div id="upload-tab" class="tab active">
         <h2>Upload a ZIP or PDF File</h2>
         <form id="upload-form" enctype="multipart/form-data" onsubmit="event.preventDefault(); uploadFile();">
-            <input type="file" name="file" required>
-            <button type="submit">Upload</button>
+            <input type="file" id="fileInput" name="file" required> <!-- ✅ ADDED id="fileInput" -->
+            <button type="submit" id="uploadButton">Upload</button> <!-- ✅ ADDED id="uploadButton" -->
         </form>
         <div id="progress-container">
             <div id="progress-bar"></div>
@@ -31,7 +31,7 @@
     </div>
 
     <!-- Summaries Tab -->
-    <div id="summary-tab" class="tab">
+    <div id="summary-tab" class="tab" style="display: none;"> <!-- ✅ Hide initially -->
         <h2>Summaries</h2>
         <div id="summary-container">
             <p>No summaries available. Upload a document first.</p>
@@ -39,7 +39,7 @@
     </div>
 
     <!-- Figures Tab -->
-    <div id="figures-tab" class="tab">
+    <div id="figures-tab" class="tab" style="display: none;"> <!-- ✅ Hide initially -->
         <h2>Figures</h2>
         <div id="figures-container">
             <p>No figures extracted. Upload a document first.</p>
@@ -48,4 +48,3 @@
 
 </body>
 </html>
-
