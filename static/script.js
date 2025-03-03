@@ -86,3 +86,5 @@ function uploadFile() {
     })
     .catch(error => console.error("❌ Fetch error:", error));
 }
+
+window.uploadFile = uploadFile;
