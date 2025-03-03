@@ -1,4 +1,4 @@
-
+let formData = new FormData(document.getElementById('upload-form'));
          
           document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ JCAP_AI_PAPER_SUMMARIZER loaded successfully!");
