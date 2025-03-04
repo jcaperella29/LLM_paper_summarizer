@@ -96,4 +96,21 @@ function uploadFile() {
             let figuresContent = document.createElement("div");
             figuresContent.innerHTML = `<h3>${pdfName} Figures</h3>`;
 
-         
+            data.figures[pdfName].forEach(fig => {
+                let img = document.createElement("img");
+                img.src = fig.startsWith("http") ? fig : "/static/figures/" + fig;
+                img.alt = "Extracted Figure";
+                figuresContent.appendChild(img);
+            });
+
+            figuresTab.appendChild(figuresContent);
+        });
+
+        showTab("summary-tab");
+    })
+    .catch(error => console.error("❌ Fetch error:", error));
+}
+
+// **Expose function to global scope**
+window.uploadFile = uploadFile;
+window.showTab = showTab;  // ✅ Also ensuring tab switching works
