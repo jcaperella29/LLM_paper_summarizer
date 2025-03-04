@@ -50,6 +50,8 @@ function uploadFile() {
     let formData = new FormData();  // ✅ Ensuring formData is properly declared
     formData.append("file", fileInput.files[0]);  // ✅ Appending the selected file manually
 
+    console.log("📂 Selected file:", fileInput.files[0]);
+
     document.getElementById("progress-container").style.display = "block";
     document.getElementById("progress-bar").style.width = "0%";
 
@@ -94,20 +96,4 @@ function uploadFile() {
             let figuresContent = document.createElement("div");
             figuresContent.innerHTML = `<h3>${pdfName} Figures</h3>`;
 
-            data.figures[pdfName].forEach(fig => {
-                let img = document.createElement("img");
-                img.src = fig.startsWith("http") ? fig : "/static/figures/" + fig;
-                img.alt = "Extracted Figure";
-                figuresContent.appendChild(img);
-            });
-
-            figuresTab.appendChild(figuresContent);
-        });
-
-        showTab("summary-tab");
-    })
-    .catch(error => console.error("❌ Fetch error:", error));
-}
-
-// Expose function to global scope
-window.uploadFile = uploadFile;
+         
