@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for jcap-ai-paper-summarizer-aot5kq on 2025-03-03T19:44:15Z
+# fly.toml app configuration file generated for jcap-ai-paper-summarizer-1rvz0q on 2025-03-04T00:22:24Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'jcap-ai-paper-summarizer-aot5kq'
-primary_region = 'ewr'
+app = 'jcap-ai-paper-summarizer-1rvz0q'
+primary_region = 'bos'
 
 [build]
 
