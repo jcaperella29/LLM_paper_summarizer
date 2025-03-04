@@ -1,4 +1,4 @@
- document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ JCAP_AI_PAPER_SUMMARIZER loaded successfully!");
     console.log("📌 Checking button and input elements...");
     
@@ -47,7 +47,8 @@ function uploadFile() {
         return;
     }
 
-    let formData = new FormData(document.getElementById("upload-form"));
+    let formData = new FormData();  // ✅ Ensuring formData is properly declared
+    formData.append("file", fileInput.files[0]);  // ✅ Appending the selected file manually
 
     document.getElementById("progress-container").style.display = "block";
     document.getElementById("progress-bar").style.width = "0%";
@@ -110,4 +111,3 @@ function uploadFile() {
 
 // Expose function to global scope
 window.uploadFile = uploadFile;
-
