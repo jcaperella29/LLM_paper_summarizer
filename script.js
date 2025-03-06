@@ -1,12 +1,22 @@
-
-
 document.addEventListener("DOMContentLoaded", function () {
     console.log("✅ JCAP_AI_PAPER_SUMMARIZER loaded successfully!");
+    console.log("📌 Checking button and input elements...");
+    
+    let uploadButton = document.getElementById("uploadButton");
+    let fileInput = document.getElementById("fileInput");
 
-    let uploadButton = document.getElementById('upload-button');
+    console.log("Upload Button:", uploadButton);
+    console.log("File Input:", fileInput);
+
+    if (!fileInput) {
+        console.error("❌ Error: File input element not found in DOM!");
+    }
 
     if (uploadButton) {
-        uploadButton.addEventListener("click", uploadFile);
+        uploadButton.addEventListener("click", function(event) {
+            event.preventDefault(); // Prevent default form submission
+            uploadFile();
+        });
     } else {
         console.error("❌ Upload button not found! Check index.html.");
     }
@@ -15,17 +25,35 @@ document.addEventListener("DOMContentLoaded", function () {
 // Function to handle tab switching
 function showTab(tabId) {
     document.querySelectorAll('.tab').forEach(tab => tab.style.display = 'none');
-    document.getElementById(tabId).style.display = 'block';
-    console.log(`🔄 Switching to tab: ${tabId}`);
+    let selectedTab = document.getElementById(tabId);
+
+    if (selectedTab) {
+        selectedTab.style.display = 'block';
+        console.log(`🔄 Switching to tab: ${tabId}`);
+    } else {
+        console.error(`❌ Tab not found: ${tabId}`);
+    }
 }
 
+// Function to handle file upload
 function uploadFile() {
     console.log("📌 Upload button clicked");
 
-    let formData = new FormData(document.getElementById('upload-form'));
+    let fileInput = document.getElementById("fileInput");
 
-    document.getElementById('progress-container').style.display = 'block';
-    document.getElementById('progress-bar').style.width = '0%';
+    if (!fileInput || fileInput.files.length === 0) {
+        console.error("❌ No file selected!");
+        alert("Please select a file before uploading.");
+        return;
+    }
+
+    let formData = new FormData();  // ✅ Ensuring formData is properly declared
+    formData.append("file", fileInput.files[0]);  // ✅ Appending the selected file manually
+
+    console.log("📂 Selected file:", fileInput.files[0]);
+
+    document.getElementById("progress-container").style.display = "block";
+    document.getElementById("progress-bar").style.width = "0%";
 
     fetch("/upload", {
         method: "POST",
@@ -39,6 +67,16 @@ function uploadFile() {
         let figuresTab = document.getElementById("figures-tab");
         summaryTab.innerHTML = "<h2>Summaries</h2>";
         figuresTab.innerHTML = "<h2>Figures</h2>";
+
+        if (!data.summaries || typeof data.summaries !== "object") {
+            console.error("❌ Error: Summaries are missing in response!");
+            return;
+        }
+
+        if (!data.figures || typeof data.figures !== "object") {
+            console.error("❌ Error: Figures are missing in response!");
+            return;
+        }
 
         // Populate summaries
         Object.keys(data.summaries).forEach(pdfName => {
@@ -57,10 +95,10 @@ function uploadFile() {
         Object.keys(data.figures).forEach(pdfName => {
             let figuresContent = document.createElement("div");
             figuresContent.innerHTML = `<h3>${pdfName} Figures</h3>`;
-            
+
             data.figures[pdfName].forEach(fig => {
                 let img = document.createElement("img");
-                img.src = "/static/figures/" + fig;
+                img.src = fig.startsWith("http") ? fig : "/static/figures/" + fig;
                 img.alt = "Extracted Figure";
                 figuresContent.appendChild(img);
             });
@@ -68,7 +106,11 @@ function uploadFile() {
             figuresTab.appendChild(figuresContent);
         });
 
-        showTab('summary-tab');
+        showTab("summary-tab");
     })
     .catch(error => console.error("❌ Fetch error:", error));
 }
+
+// **Expose function to global scope**
+window.uploadFile = uploadFile;
+window.showTab = showTab;  // ✅ Also ensuring tab switching works
