@@ -15,7 +15,8 @@ FIGURE_FOLDER = "static/figures"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(SUMMARY_FOLDER, exist_ok=True)
 os.makedirs(FIGURE_FOLDER, exist_ok=True)
-OLLAMA_URL = "https://ollama-service-solitary-snowflake-411.fly.dev/api/generate"
+
+OLLAMA_URL = "https://ollama-service-hidden-waterfall-2124.fly.dev/api/generate"
 
 def summarize_text(text, chunk_size=3000):
     """
@@ -41,6 +42,7 @@ def summarize_text(text, chunk_size=3000):
             summaries.append("Error: Timeout on this chunk.")
 
     return "\n\n".join(summaries)  # Combine summaries
+
 
 
 ### 📌 Function to Extract Text from PDF (Supports Chunking) ###
