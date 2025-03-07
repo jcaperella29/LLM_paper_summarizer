@@ -18,6 +18,7 @@ os.makedirs(FIGURE_FOLDER, exist_ok=True)
 
 OLLAMA_URL = "https://ollama-service-hidden-waterfall-2124.fly.dev/api/generate"
 
+### 📌 Function to Summarize Text ###
 def summarize_text(text, chunk_size=3000):
     """
     Sends extracted text to Ollama for summarization.
@@ -43,64 +44,14 @@ def summarize_text(text, chunk_size=3000):
 
     return "\n\n".join(summaries)  # Combine summaries
 
-
-
-### 📌 Function to Extract Text from PDF (Supports Chunking) ###
-def extract_text_from_pdf(pdf_path, chunk_size=3000):
+### 📌 Function to Extract Text from PDF ###
+def extract_text_from_pdf(pdf_path):
     """
-    Extracts text from a PDF and returns it in **manageable chunks**.
+    Extracts text from a PDF and returns it as a single string.
     """
     doc = fitz.open(pdf_path)
-    text_chunks = []
-    current_text = ""
-
-    for page in doc:
-        current_text += page.get_text("text") + "\n"
-        if len(current_text) >= chunk_size:
-            text_chunks.append(current_text)
-            current_text = ""
-
-    if current_text:
-        text_chunks.append(current_text)
-
-    return " ".join(text_chunks)  # Return full extracted text
-
-### 📌 Function to Extract Figures (Images) from a PDF ###
-def extract_figures_from_pdf(pdf_path, output_folder):
-    """
-    Extracts images from a PDF file and saves them in a specified folder.
-    """
-    doc = fitz.open(pdf_path)
-    extracted_images = []
-    pdf_filename = os.path.basename(pdf_path).replace(".pdf", "")
-
-    for i, page in enumerate(doc):
-        for img_index, img in enumerate(page.get_images(full=True)):
-            xref = img[0]
-            img_data = doc.extract_image(xref)
-            img_bytes = img_data["image"]
-            img_ext = img_data["ext"]
-
-            img_filename = f"{pdf_filename}_page{i+1}_img{img_index+1}.{img_ext}"
-            img_path = os.path.join(output_folder, img_filename)
-
-            with open(img_path, "wb") as f:
-                f.write(img_bytes)
-
-            extracted_images.append(img_filename)
-
-    return extracted_images  # List of extracted image filenames
-
-### 📌 Function to Process ZIP Files (Extract PDFs) ###
-def process_zip(zip_path):
-    """
-    Extracts PDFs from a ZIP file and processes them.
-    """
-    extracted_files = []
-    with zipfile.ZipFile(zip_path, "r") as zip_ref:
-        zip_ref.extractall(UPLOAD_FOLDER)
-        extracted_files = [os.path.join(UPLOAD_FOLDER, f) for f in zip_ref.namelist() if f.endswith(".pdf")]
-    return extracted_files
+    text = "\n".join([page.get_text("text") for page in doc])
+    return text.strip()
 
 ### 📌 Function to Generate Summary PDF ###
 def create_summary_pdf(summary_text, pdf_filename):
@@ -118,7 +69,6 @@ def create_summary_pdf(summary_text, pdf_filename):
     pdf.output(pdf_filename)
 
 ### 📌 Flask Routes ###
-
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -127,10 +77,11 @@ def index():
 @app.route("/static/<path:filename>")
 def static_files(filename):
     return send_from_directory("static", filename)
+
 @app.route("/upload", methods=["POST"])
 def upload_file():
     """
-    Handles uploaded ZIP or PDF files, extracts data, summarizes text, and extracts figures.
+    Handles uploaded PDF files, extracts text, summarizes it, and saves results.
     """
     print("✅ Received upload request")  # Debugging print
 
@@ -143,11 +94,31 @@ def upload_file():
         print("❌ Error: No selected file")
         return jsonify({"error": "No selected file"}), 400
 
+    # Save file
     filepath = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(filepath)
     print(f"✅ File saved at {filepath}")
 
-    return jsonify({"message": "File uploaded successfully", "filename": file.filename})
+    # Extract text from PDF
+    extracted_text = extract_text_from_pdf(filepath)
+    if not extracted_text:
+        return jsonify({"error": "Could not extract text from PDF."}), 400
+
+    # Summarize the extracted text
+    summary_text = summarize_text(extracted_text)
+
+    # Save summary as PDF
+    pdf_name = file.filename.replace(".pdf", "_summary.pdf")
+    pdf_summary_path = os.path.join(SUMMARY_FOLDER, pdf_name)
+    create_summary_pdf(summary_text, pdf_summary_path)
+
+    print("✅ Summary generated successfully")
+
+    return jsonify({
+        "message": "File processed successfully",
+        "summary": summary_text,
+        "download_link": f"/download_summary/{pdf_name}"
+    })
 
 # API Endpoint: Download Summaries
 @app.route("/download_summary/<pdf_name>")
@@ -155,17 +126,9 @@ def download_summary(pdf_name):
     """
     Allows users to download **individual** summary PDFs.
     """
-    pdf_path = os.path.join(SUMMARY_FOLDER, f"{pdf_name}_summary.pdf")
+    pdf_path = os.path.join(SUMMARY_FOLDER, pdf_name)
     return send_file(pdf_path, as_attachment=True)
 
-# API Endpoint: Serve Extracted Figures
-@app.route("/static/figures/<filename>")
-def serve_figure(filename):
-    """
-    Allows users to view/download extracted figures.
-    """
-    return send_from_directory(FIGURE_FOLDER, filename)
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))  # Fix: Use Cloud Run's port 8080
-    app.run(host="0.0.0.0", port=port)        # Fix: Listen on all interface
+    port = int(os.environ.get("PORT", 8080))  # Use the correct Fly.io port
+    app.run(host="0.0.0.0", port=port)  # Listen on all interfaces
