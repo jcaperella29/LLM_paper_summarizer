@@ -15,8 +15,8 @@ FIGURE_FOLDER = "static/figures"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(SUMMARY_FOLDER, exist_ok=True)
 os.makedirs(FIGURE_FOLDER, exist_ok=True)
+OLLAMA_URL = "https://ollama-service-solitary-snowflake-411.fly.dev/api/generate"
 
-### 📌 Function to Summarize Text with Chunk Processing ###
 def summarize_text(text, chunk_size=3000):
     """
     Sends extracted text to Ollama for summarization.
@@ -29,17 +29,19 @@ def summarize_text(text, chunk_size=3000):
         print(f"📌 Processing chunk {idx + 1}/{len(text_chunks)}")  # Debugging log
         try:
             response = requests.post(
-                "http://localhost:11434/api/generate",
+                OLLAMA_URL,
                 json={"model": "mistral", "prompt": f"Summarize this:\n{chunk}", "stream": False},
                 timeout=120
             )
-            summary = response.json().get("response", "Error: No response from Ollama.")
+            response_json = response.json()
+            summary = response_json.get("response", "Error: No response from Ollama.")
             summaries.append(summary)
         except requests.exceptions.Timeout:
             print(f"❌ Error: Ollama request timed out on chunk {idx + 1}")
             summaries.append("Error: Timeout on this chunk.")
 
     return "\n\n".join(summaries)  # Combine summaries
+
 
 ### 📌 Function to Extract Text from PDF (Supports Chunking) ###
 def extract_text_from_pdf(pdf_path, chunk_size=3000):
